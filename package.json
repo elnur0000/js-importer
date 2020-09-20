@@ -26,6 +26,7 @@
 		"pretest": "npm run lint",
 		"test": "node ./test/runTest.js"
 	},
+	"publisher": "elnur",
 	"devDependencies": {
 		"@types/vscode": "^1.49.0",
 		"@types/glob": "^7.1.3",
