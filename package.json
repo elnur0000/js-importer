@@ -9,6 +9,7 @@
 	"categories": [
 		"Other"
 	],
+	"repository": {"url": "https://github.com/elnur0000/js-importer"},
 	"activationEvents": [
 		"onCommand:js-importer.run"
 	],
