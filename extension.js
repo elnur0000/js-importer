@@ -3,6 +3,52 @@
 const vscode = require('vscode')
 const path = require('path')
 
+
+
+/**
+ * @param {string} importText
+ * @param {string} fileNameWithoutExt
+ */
+function insertImportText(importText, fileNameWithoutExt) {
+  const editor = vscode.window.activeTextEditor
+  editor.edit((editBuilder) => {
+    editBuilder.insert(new vscode.Position(0), importText)
+  }
+  )
+
+  // positions are starting from 1, not 0
+  const fileNameStartPosition = importText.split(' ')[0].length + 1
+  // take cursor and view to same place as new import statement
+  const position = editor.selection.active
+  const fromPosition = position.with(0, fileNameStartPosition)
+  const toPosition = position.with(0, fileNameStartPosition + fileNameWithoutExt.length)
+  const newSelection = new vscode.Selection(fromPosition, toPosition)
+  const range = new vscode.Range(fromPosition, fromPosition)
+  editor.selection = newSelection
+  editor.revealRange(range)
+}
+
+/**
+ * @param {string} fileName
+ * @param {string} currentFilePath
+ * @returns {vscode.Uri}
+ */
+
+async function findNearest(fileName,currentFilePath) {
+  if(!currentFilePath.includes(vscode.workspace.name)){
+    return
+  }
+  const dirName = path.dirname(currentFilePath)
+  const targetFilePath = path.join(`${dirName}`,fileName)
+  const relativeTargetFilePath = vscode.workspace.asRelativePath(targetFilePath)
+  const file = await vscode.workspace.findFiles(relativeTargetFilePath,'**/node_modules/**',1)
+  if(!file.length) {
+    return findNearest(fileName, dirName)
+  } else {
+    return file[0]
+  }
+}
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 
@@ -18,9 +64,21 @@ function activate (context) {
   // The commandId parameter must match the command field in package.json
   const disposable = vscode.commands.registerCommand('js-importer.run', async function () {
     // The code you place here will be executed every time your command is executed
-    const files = await vscode.workspace.findFiles('**/*.{js,jsx,json,env}', '**/node_modules/**')
-    const workspaceName = vscode.workspace.name
+    let importType = 'es6'
+    let extensions = 'js,jsx,json,env'
+    const configFileUri = await findNearest('js-importer.json', vscode.window.activeTextEditor.document.fileName)
+    if(configFileUri) {
+      const configFile = await vscode.workspace.fs.readFile(configFileUri)
+      const configFileJson = JSON.parse(configFile.toString())
+      importType = configFileJson.type || importType
+      extensions = configFileJson.extensions || extensions
+    }
+    
+    const files = await vscode.workspace.findFiles(`**/*.{${extensions}}`, '**/node_modules/**')
+    const workspace = vscode.workspace
+    const workspaceName = workspace.name
     const editor = vscode.window.activeTextEditor
+    const config = workspace.getConfiguration('launch', workspace.workspaceFolders[0].uri);
 
     // build quick pick items from file list inside workspace
     const quickPickItems = files.map(fileObj => {
@@ -51,24 +109,21 @@ function activate (context) {
       relativePath = './' + relativePath
     }
 
-    editor.edit((editBuilder) => {
-      editBuilder.insert(new vscode.Position(0), `import ${fileNameWithoutExt} from '${relativePath}'\n`)
-    }
-    )
 
-    // take cursor and view to same place as new import statement
-    const position = editor.selection.active
-    const fromPosition = position.with(0, 7)
-    const toPosition = position.with(0, 7 + fileNameWithoutExt.length)
-    const newSelection = new vscode.Selection(fromPosition, toPosition)
-    const range = new vscode.Range(fromPosition, fromPosition)
-    editor.selection = newSelection
-    editor.revealRange(range)
+    if (importType==='commonjs') {
+      const importText = `const ${fileNameWithoutExt} = require('${relativePath}')\n`
+      insertImportText(importText, fileNameWithoutExt)
+    } else {
+      const importText = `import ${fileNameWithoutExt} from '${relativePath}'\n`
+      insertImportText(importText, fileNameWithoutExt)
+    }
+    
   })
 
   context.subscriptions.push(disposable)
 }
 exports.activate = activate
+
 
 // this method is called when your extension is deactivated
 function deactivate () {}
