@@ -6,6 +6,7 @@ You can simply search and pick a js/json/jsx file to import using ES6 or Commonj
 ![demo](images/g.gif)
 
 **Commonjs and custom extensions**
+
 create a file called "js-importer.json" in main directory of project
 this is how options should look like
 ```json
