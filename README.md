@@ -17,4 +17,5 @@ this is how options should look like
 }
 ```
 type defaults to - "es6"
-extesions defaults to - "js,json,jsx"
+
+extensions defaults to - "js,json,jsx"
