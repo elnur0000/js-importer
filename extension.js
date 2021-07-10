@@ -3,13 +3,11 @@
 const vscode = require('vscode')
 const path = require('path')
 
-
-
 /**
  * @param {string} importText
  * @param {string} fileNameWithoutExt
  */
-function insertImportText(importText, fileNameWithoutExt) {
+function insertImportText (importText, fileNameWithoutExt) {
   const editor = vscode.window.activeTextEditor
   editor.edit((editBuilder) => {
     editBuilder.insert(new vscode.Position(0), importText)
@@ -34,15 +32,15 @@ function insertImportText(importText, fileNameWithoutExt) {
  * @returns {vscode.Uri}
  */
 
-async function findNearest(fileName,currentFilePath) {
-  if(!currentFilePath.includes(vscode.workspace.name)){
+async function findNearest (fileName, currentFilePath) {
+  if (!currentFilePath.includes(vscode.workspace.name)) {
     return
   }
   const dirName = path.dirname(currentFilePath)
-  const targetFilePath = path.join(`${dirName}`,fileName)
+  const targetFilePath = path.join(`${dirName}`, fileName)
   const relativeTargetFilePath = vscode.workspace.asRelativePath(targetFilePath)
-  const file = await vscode.workspace.findFiles(relativeTargetFilePath,'**/node_modules/**',1)
-  if(!file.length) {
+  const file = await vscode.workspace.findFiles(relativeTargetFilePath, '**/node_modules/**', 1)
+  if (!file.length) {
     return findNearest(fileName, dirName)
   } else {
     return file[0]
@@ -67,18 +65,17 @@ function activate (context) {
     let importType = 'es6'
     let extensions = 'js,jsx,json,env'
     const configFileUri = await findNearest('js-importer.json', vscode.window.activeTextEditor.document.fileName)
-    if(configFileUri) {
+    if (configFileUri) {
       const configFile = await vscode.workspace.fs.readFile(configFileUri)
       const configFileJson = JSON.parse(configFile.toString())
       importType = configFileJson.type || importType
       extensions = configFileJson.extensions || extensions
     }
-    
+
     const files = await vscode.workspace.findFiles(`**/*.{${extensions}}`, '**/node_modules/**')
     const workspace = vscode.workspace
     const workspaceName = workspace.name
     const editor = vscode.window.activeTextEditor
-    const config = workspace.getConfiguration('launch', workspace.workspaceFolders[0].uri);
 
     // build quick pick items from file list inside workspace
     const quickPickItems = files.map(fileObj => {
@@ -109,21 +106,21 @@ function activate (context) {
       relativePath = './' + relativePath
     }
 
-
-    if (importType==='commonjs') {
+    if (importType === 'commonjs') {
       const importText = `const ${fileNameWithoutExt} = require('${relativePath}')\n`
       insertImportText(importText, fileNameWithoutExt)
     } else {
+      if (relativePath.substring(relativePath.length - 3, relativePath.length) === '.ts') {
+        relativePath = relativePath.replace('.ts', '')
+      }
       const importText = `import ${fileNameWithoutExt} from '${relativePath}'\n`
       insertImportText(importText, fileNameWithoutExt)
     }
-    
   })
 
   context.subscriptions.push(disposable)
 }
 exports.activate = activate
-
 
 // this method is called when your extension is deactivated
 function deactivate () {}
