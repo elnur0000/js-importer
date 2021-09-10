@@ -32,8 +32,8 @@ function insertImportText (importText, fileNameWithoutExt) {
  * @returns {vscode.Uri}
  */
 
-async function findNearest (fileName, currentFilePath) {
-  if (!currentFilePath.includes(vscode.workspace.name)) {
+async function findNearest (fileName, currentFilePath, workspaceName) {
+  if (!currentFilePath.includes(workspaceName)) {
     return
   }
   const dirName = path.dirname(currentFilePath)
@@ -41,7 +41,7 @@ async function findNearest (fileName, currentFilePath) {
   const relativeTargetFilePath = vscode.workspace.asRelativePath(targetFilePath)
   const file = await vscode.workspace.findFiles(relativeTargetFilePath, '**/node_modules/**', 1)
   if (!file.length) {
-    return findNearest(fileName, dirName)
+    return findNearest(fileName, dirName, workspaceName)
   } else {
     return file[0]
   }
@@ -64,7 +64,10 @@ function activate (context) {
     // The code you place here will be executed every time your command is executed
     let importType = 'es6'
     let extensions = 'js,jsx,json,env'
-    const configFileUri = await findNearest('js-importer.json', vscode.window.activeTextEditor.document.fileName)
+    const workspace = vscode.workspace
+    const isWSL = workspace.name.includes('WSL')
+    const workspaceName = isWSL ? workspace.name.substring(0,workspace.name.indexOf('[')-1) : workspace.name
+    const configFileUri = await findNearest('js-importer.json', vscode.window.activeTextEditor.document.fileName, workspaceName)
     if (configFileUri) {
       const configFile = await vscode.workspace.fs.readFile(configFileUri)
       const configFileJson = JSON.parse(configFile.toString())
@@ -73,8 +76,7 @@ function activate (context) {
     }
 
     const files = await vscode.workspace.findFiles(`**/*.{${extensions}}`, '**/node_modules/**')
-    const workspace = vscode.workspace
-    const workspaceName = workspace.name
+   
     const editor = vscode.window.activeTextEditor
 
     // build quick pick items from file list inside workspace
