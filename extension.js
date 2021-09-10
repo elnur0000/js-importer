@@ -66,7 +66,7 @@ function activate (context) {
     let extensions = 'js,jsx,json,env'
     const workspace = vscode.workspace
     const isWSL = workspace.name.includes('WSL')
-    const workspaceName = isWSL ? workspace.name.substring(0,workspace.name.indexOf('[')-1) : workspace.name
+    const workspaceName = isWSL ? workspace.name.substring(0, workspace.name.indexOf('[') - 1) : workspace.name
     const configFileUri = await findNearest('js-importer.json', vscode.window.activeTextEditor.document.fileName, workspaceName)
     if (configFileUri) {
       const configFile = await vscode.workspace.fs.readFile(configFileUri)
@@ -76,7 +76,7 @@ function activate (context) {
     }
 
     const files = await vscode.workspace.findFiles(`**/*.{${extensions}}`, '**/node_modules/**')
-   
+
     const editor = vscode.window.activeTextEditor
 
     // build quick pick items from file list inside workspace

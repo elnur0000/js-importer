@@ -2,7 +2,7 @@
 	"name": "js-importer",
 	"displayName": "js-importer",
 	"description": "imports picked file",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"engines": {
 		"vscode": "^1.49.0"
 	},
@@ -25,7 +25,8 @@
 	"scripts": {
 		"lint": "eslint .",
 		"pretest": "npm run lint",
-		"test": "node ./test/runTest.js"
+		"test": "node ./test/runTest.js",
+		"build": "vsce package"
 	},
 	"publisher": "elnur",
 	"devDependencies": {
